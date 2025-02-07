@@ -167,6 +167,24 @@
             font-size: 0.9em;
             color: rgba(255, 255, 255, 0.7);
         }
+
+        .tts-button {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            transition: color 0.3s ease;
+            margin-left: 10px;
+        }
+        
+        .tts-button:hover {
+            color: var(--accent-color);
+        }
+        
+        .tts-button:disabled {
+            color: #cccccc;
+            cursor: not-allowed;
+        }
+
     </style>
 </head>
 <body>
@@ -715,6 +733,227 @@ function calculateConfidence(scores) {
         document.getElementById('sentimentConfidence').style.width = `${confidence * 100}%`;
         visualizeEmotions(Object.entries(result.scores).map(([emotion, score]) => ({ emotion, score })));
     }
+     class AdvancedTextToSpeech {
+            constructor() {
+                this.synthesis = window.speechSynthesis;
+                this.voices = [];
+                this.currentVoice = null;
+                this.isSpeaking = false;
+
+                this.loadVoices();
+                
+                // Handle voice loading asynchronously
+                if ('onvoiceschanged' in speechSynthesis) {
+                    speechSynthesis.onvoiceschanged = () => this.loadVoices();
+                }
+            }
+
+            loadVoices() {
+                this.voices = speechSynthesis.getVoices()
+                    .filter(voice => voice.lang.startsWith('en-'));
+                
+                // Set default to first available English voice
+                this.currentVoice = this.voices[0] || null;
+            }
+
+            speak(text, options = {}) {
+                this.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+
+                utterance.voice = this.currentVoice;
+                utterance.rate = options.rate || 1;
+                utterance.pitch = options.pitch || 1;
+                utterance.volume = options.volume || 1;
+
+                utterance.onstart = () => {
+                    this.isSpeaking = true;
+                    options.onStart && options.onStart();
+                };
+
+                utterance.onend = () => {
+                    this.isSpeaking = false;
+                    options.onEnd && options.onEnd();
+                };
+
+                this.synthesis.speak(utterance);
+            }
+
+            cancel() {
+                if (this.synthesis.speaking) {
+                    this.synthesis.cancel();
+                }
+                this.isSpeaking = false;
+            }
+
+            setVoice(voiceName) {
+                const selectedVoice = this.voices.find(voice => voice.name === voiceName);
+                if (selectedVoice) {
+                    this.currentVoice = selectedVoice;
+                }
+            }
+        }
+
+        // Voice Recognition Class
+        class VoiceRecognition {
+            constructor(onResult) {
+                this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+                this.recognition.lang = 'en-US';
+
+                this.recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript.trim();
+                    onResult(transcript);
+                };
+
+                this.recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                };
+            }
+
+            start() {
+                try {
+                    this.recognition.start();
+                } catch (error) {
+                    console.error('Could not start speech recognition:', error);
+                }
+            }
+        }
+
+        // Initialize TTS
+        const tts = new AdvancedTextToSpeech();
+
+        // Voice Input Setup
+        function setupVoiceInput() {
+            // Voice input for main text area
+            const textInput = document.getElementById('inputText');
+            const voiceInputBtn = document.createElement('button');
+            voiceInputBtn.innerHTML = '🎙️';
+            voiceInputBtn.classList.add('voice-input-btn');
+
+            const voiceRecognition = new VoiceRecognition((transcript) => {
+                textInput.value = transcript;
+                voiceInputBtn.classList.remove('active');
+            });
+
+            voiceInputBtn.onclick = () => {
+                voiceInputBtn.classList.add('active');
+                voiceRecognition.start();
+            };
+
+            textInput.parentNode.insertBefore(voiceInputBtn, textInput.nextSibling);
+
+            // Voice input for question area
+            const questionInput = document.getElementById('question');
+            const questionVoiceBtn = document.createElement('button');
+            questionVoiceBtn.innerHTML = '🎙️';
+            questionVoiceBtn.classList.add('voice-input-btn');
+
+            const questionRecognition = new VoiceRecognition((transcript) => {
+                questionInput.value = transcript;
+                questionVoiceBtn.classList.remove('active');
+            });
+
+            questionVoiceBtn.onclick = () => {
+                questionVoiceBtn.classList.add('active');
+                questionRecognition.start();
+            };
+
+            questionInput.parentNode.insertBefore(questionVoiceBtn, questionInput.nextSibling);
+        }
+
+        // Voice Selector Creation
+        function createVoiceSelector() {
+            const selectorDiv = document.createElement('div');
+            selectorDiv.classList.add('voice-controls');
+            
+            const voiceSelect = document.createElement('select');
+            voiceSelect.classList.add('form-select', 'voice-selector');
+            
+            tts.voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+            });
+
+            voiceSelect.addEventListener('change', (e) => {
+                tts.setVoice(e.target.value);
+            });
+
+            selectorDiv.appendChild(voiceSelect);
+            document.querySelector('.container').insertBefore(selectorDiv, document.querySelector('.container').firstChild);
+        }
+
+        // Modify existing functions to speak only relevant content
+        function speakOnlyResult(resultElementId) {
+            const resultElement = document.getElementById(resultElementId);
+            const resultText = resultElement.querySelector('.result-text');
+            
+            if (resultText) {
+                tts.speak(resultText.innerText, {
+                    onStart: () => resultText.classList.add('speaking'),
+                    onEnd: () => resultText.classList.remove('speaking')
+                });
+            }
+        }
+
+        // Modify summarizeText to wrap result in a div
+        const originalSummarizeText = summarizeText;
+        summarizeText = function() {
+            originalSummarizeText();
+            
+            const summaryResult = document.getElementById('summaryResult');
+            const currentContent = summaryResult.innerHTML;
+            summaryResult.innerHTML = `
+                <div class="result-text">${currentContent}</div>
+                <button class="btn btn-sm btn-outline-primary speak-btn">🔊 Speak Summary</button>
+            `;
+
+            summaryResult.querySelector('.speak-btn').addEventListener('click', () => {
+                speakOnlyResult('summaryResult');
+            });
+        };
+
+        // Similar modifications for other functions
+        const originalAnswerQuestion = answerQuestion;
+        answerQuestion = function() {
+            originalAnswerQuestion();
+            
+            const answerResult = document.getElementById('answerResult');
+            const currentContent = answerResult.innerHTML;
+            answerResult.innerHTML = `
+                <div class="result-text">${currentContent}</div>
+                <button class="btn btn-sm btn-outline-primary speak-btn">🔊 Speak Answer</button>
+            `;
+
+            answerResult.querySelector('.speak-btn').addEventListener('click', () => {
+                speakOnlyResult('answerResult');
+            });
+        };
+
+        const originalAnalyzeSentiment = analyzeSentiment;
+        analyzeSentiment = function() {
+            originalAnalyzeSentiment();
+            
+            const sentimentResult = document.getElementById('sentimentResult');
+            const currentContent = sentimentResult.innerHTML;
+            sentimentResult.innerHTML = `
+                <div class="result-text">${currentContent}</div>
+                <button class="btn btn-sm btn-outline-primary speak-btn">🔊 Speak Sentiment</button>
+            `;
+
+            sentimentResult.querySelector('.speak-btn').addEventListener('click', () => {
+                speakOnlyResult('sentimentResult');
+            });
+        };
+
+        // Initialize voice features after page load
+        window.addEventListener('load', () => {
+            setupVoiceInput();
+            createVoiceSelector();
+        });
     </script>
 </body>
 </html>
