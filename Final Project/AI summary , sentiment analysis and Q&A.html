@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced AI Language Assistant - #100DAYSOFCODEATAUA</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2d3436">
+    <style>
+        :root {
+            --primary-color: #2d3436;
+            --secondary-color: #0984e3;
+            --accent-color: #00b894;
+            --text-color: #2d3436;
+            --background-light: #f9f9f9;
+            --emotion-joy: #ffd93d;
+            --emotion-sadness: #6c5ce7;
+            --emotion-anger: #ff6b6b;
+            --emotion-fear: #a8e6cf;
+            --emotion-surprise: #ff9f43;
+            --emotion-neutral: #81ecec;
+        }
+
+        body {
+            background-color: var(--background-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: var(--primary-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+            height: 100%;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 1rem;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .card-header-custom {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            font-weight: 500;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .result-box {
+            min-height: 100px;
+            background-color: var(--background-light);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: justify;
+        }
+
+        .btn-custom {
+            background: var(--secondary-color);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            background: var(--primary-color);
+            color: white;
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .model-info {
+            background: var(--background-light);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+        }
+
+        .confidence-meter {
+            height: 4px;
+            background: #eee;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .confidence-level {
+            height: 100%;
+            background: var(--accent-color);
+            transition: width 0.3s ease;
+        }
+
+        .emotion-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 2px;
+            font-size: 0.9em;
+            color: white;
+        }
+
+        .emotion-joy { background-color: var(--emotion-joy); }
+        .emotion-sadness { background-color: var(--emotion-sadness); }
+        .emotion-anger { background-color: var(--emotion-anger); }
+        .emotion-fear { background-color: var(--emotion-fear); }
+        .emotion-surprise { background-color: var(--emotion-surprise); }
+        .emotion-neutral { background-color: var(--emotion-neutral); }
+
+        .sentiment-chart {
+            height: 150px;
+            margin-top: 15px;
+            position: relative;
+            width: 100%;
+        }
+
+        .sentiment-bar {
+            position: absolute;
+            bottom: 0;
+            width: 30px;
+            background-color: var(--accent-color);
+            transition: height 0.3s ease;
+            border-radius: 4px 4px 0 0;
+        }
+
+        #inputText, #question {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+
+        .footer-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: white;
+        }
+
+        .tech-stack {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .tts-button {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            transition: color 0.3s ease;
+            margin-left: 10px;
+        }
+        
+        .tts-button:hover {
+            color: var(--accent-color);
+        }
+        
+        .tts-button:disabled {
+            color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .voice-input-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .voice-input-btn.active {
+            background: var(--accent-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .voice-input-container {
+            position: relative;
+        }
+
+        @keyframes pulse {
+            0% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.1); }
+            100% { transform: translateY(-50%) scale(1); }
+        }
+
+        .speaking {
+            animation: speaking 2s infinite;
+        }
+
+        @keyframes speaking {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .chart-container {
+            height: 180px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .related-questions {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(9, 132, 227, 0.1);
+            border-radius: 8px;
+        }
+
+        .related-question {
+            display: inline-block;
+            background: white;
+            padding: 5px 10px;
+            margin: 3px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--secondary-color);
+        }
+
+        .related-question:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .history-container {
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .history-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .history-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .voice-controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-selector {
+            flex-grow: 1;
+        }
+
+        .speech-rate {
+            width: 100px;
+        }
+
+        .speech-tools {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .compare-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .compare-item {
+            flex: 1 1 calc(50% - 10px);
+            padding: 10px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .compare-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+        }
+
+        /* Offline indicator */
+        .offline-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff6b6b;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .offline-indicator.visible {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .follow-up-question {
+            margin-top: 15px;
+            font-style: italic;
+            color: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">🤖 Enhanced AI Language Assistant</a>
+            <span class="badge bg-light text-dark" style="cursor: pointer; font-size: 0.9em;">Advanced NLP Models</span>
+            <span class="badge bg-primary text-white" style="cursor: pointer; padding: 8px 15px; margin-left: 10px; font-size: 0.9em; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Amity University Bangalore</span>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="feature-card">
+                    <div class="card-header-custom">
+                        <h5>Input Text</h5>
+                    </div>
+                    <div class="card-body voice-input-container">
+                        <textarea id="inputText" class="form-control" rows="6" placeholder="Enter your text here for analysis..."></textarea>
+                        <button id="voiceInputBtn" class="voice-input-btn">🎙️</button>
+                    </div>
+                    <div class="history-container" id="historyContainer">
+                        <div class="small mb-2 text-muted">Recent Analyses:</div>
+                        <div id="historyItems"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Summarization Card -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="card-header-custom">
+                        <h5>Advanced Summarization</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="summarizeBtn" onclick="summarizeText()" class="btn btn-custom w-100">Generate Summary</button>
+                        <div id="summaryResult" class="result-box"></div>
+                        <div class="confidence-meter">
+                            <div class="confidence-level" id="summaryConfidence"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sentiment Analysis Card -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="card-header-custom">
+                        <h5>Deep Sentiment Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="sentimentBtn" onclick="analyzeSentiment()" class="btn btn-custom w-100">Analyze Sentiment</button>
+                        <div id="sentimentResult" class="result-box"></div>
+                        <div class="confidence-meter">
+                            <div class="confidence-level" id="sentimentConfidence"></div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                        <div class="compare-container" id="sentimentCompare"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q&A Card -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="card-header-custom">
+                        <h5>Contextual Q&A</h5>
+                    </div>
+                    <div class="card-body voice-input-container">
+                        <div class="mb-3">
+                            <textarea id="question" class="form-control" rows="2" 
+                                placeholder="Ask your question here..."></textarea>
+                            <button id="questionVoiceBtn" class="voice-input-btn">🎙️</button>
+                        </div>
+                        <button id="qaBtn" onclick="answerQuestion()" class="btn btn-custom w-100">Get Answer</button>
+                        <div id="answerResult" class="result-box"></div>
+                        <div class="confidence-meter">
+                            <div class="confidence-level" id="qaConfidence"></div>
+                        </div>
+                        <div id="qaMetrics" class="model-info mt-2 small"></div>
+                        <div id="relatedQuestions" class="related-questions d-none">
+                            <div class="small mb-2">Related Questions:</div>
+                            <div id="relatedQuestionsList"></div>
+                        </div>
+                        <div id="followUpQuestion" class="follow-up-question d-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offline-indicator" id="offlineIndicator">
+        You are currently offline. Some features may be limited.
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Advanced NLP System</h5>
+                    <p class="tech-stack">
+                        Powered by state-of-the-art language models<br>
+                        Enhanced with deep learning techniques
+                    </p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <h5>Features</h5>
+                    <p class="tech-stack">
+                        • Text Summarization<br>
+                        • Sentiment Analysis<br>
+                        • Contextual Q&A
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <h5>Performance Metrics</h5>
+                    <p class="tech-stack">
+                        Real-time processing<br>
+                        Advanced context understanding<br>
+                        High accuracy results
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- CDN Scripts -->
+    <!-- Replace the entire <script> section at the bottom of index.html -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.7.0/chart.min.js"></script>
+<script type="module">
+    import { setupSpeechFeatures } from './speech.js';
+    import { initializeUI } from './ui.js';
+    import { setupEventListeners } from './events.js';
+    import { setupServiceWorker } from './service-worker-registration.js';
+    import { ApiClient } from './api-client.js';
+    import { HistoryManager } from './history-manager.js';
+    import { ChartManager } from './chart-manager.js';
+    import './app.js';
+
+    // Initialize globals
+    window.apiClient = new ApiClient();
+    window.historyManager = new HistoryManager();
+    window.chartManager = new ChartManager();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM fully loaded, initializing app...');
+        setupServiceWorker();
+        initializeUI();
+        setupSpeechFeatures();
+        setupEventListeners();
+    });
+</script>
+</body>
+</html>
